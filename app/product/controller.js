@@ -1,4 +1,5 @@
 const Product = require('./model');
+const Category = require('../category/model');
 const path = require('path');
 const fs = require('fs');
 const config = require('../config');
@@ -19,6 +20,19 @@ async function index(req, res, next) {
 async function store(req, res, next) {
   try {
     let payload = req.body;
+
+    if (payload.category) {
+      let category = await Category.findOne({
+        name: { $regex: payload.category, $options: 'i' },
+      });
+
+      if (category) {
+        payload = { ...payload, category: category._id };
+      } else {
+        delete payload.category;
+      }
+    }
+
     if (req.file) {
       let tmp_path = req.file.path;
       let originalExt =
@@ -60,6 +74,20 @@ async function store(req, res, next) {
 async function update(req, res, next) {
   try {
     let payload = req.body;
+
+    let category = await Category.findOne({
+      name: {
+        $regex: payload.category,
+        $options: 'i',
+      },
+    });
+
+    if (category) {
+      payload = { ...payload, category: category._id };
+    } else {
+      delete payload.category;
+    }
+
     if (req.file) {
       let tmp_path = req.file.path;
       let originalExt =
