@@ -26,6 +26,13 @@ const productSchema = Schema(
       type: Schema.Types.ObjectId,
       ref: 'Category',
     },
+
+    tags: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Tag',
+      },
+    ],
   },
   { timestamps: true },
 );

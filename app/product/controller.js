@@ -1,5 +1,6 @@
 const Product = require('./model');
 const Category = require('../category/model');
+const Tag = require('../tag/model');
 const path = require('path');
 const fs = require('fs');
 const config = require('../config');
@@ -30,6 +31,14 @@ async function store(req, res, next) {
         payload = { ...payload, category: category._id };
       } else {
         delete payload.category;
+      }
+    }
+
+    if (payload.tags && payload.tags.length) {
+      let tags = await Tag.find({ name: { $in: payload.tags } });
+
+      if (tags.length) {
+        payload = { ...payload, tags: tags.map((tag) => tag._id) };
       }
     }
 
@@ -82,10 +91,18 @@ async function update(req, res, next) {
       },
     });
 
-    if (category) {
+    if (payload.category) {
       payload = { ...payload, category: category._id };
     } else {
       delete payload.category;
+    }
+
+    if (payload.tags && payload.tags.length) {
+      let tags = await Tag.find({ name: { $in: payload.tags } });
+
+      if (tags.length) {
+        payload = { ...payload, tags: tags.map((tag) => tag.id) };
+      }
     }
 
     if (req.file) {
