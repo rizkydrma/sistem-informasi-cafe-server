@@ -3,7 +3,7 @@ const Order = require('./model');
 const OrderItem = require('../order-item/model');
 const CartItem = require('../cart-item/model');
 const { policyFor } = require('../policy');
-const { Subject } = require('@casl/ability');
+const { subject } = require('@casl/ability');
 
 async function index(req, res, next) {
   let policy = policyFor(req.user);

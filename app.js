@@ -10,6 +10,7 @@ const tagRouter = require('./app/tag/router');
 const authRouter = require('./app/auth/router');
 const cartRouter = require('./app/cart/router');
 const orderRouter = require('./app/order/router');
+const invoiceRouter = require('./app/invoice/router');
 
 const { decodeToken } = require('./app/auth/middleware');
 
@@ -34,6 +35,7 @@ app.use('/api', categoryRouter);
 app.use('/api', tagRouter);
 app.use('/api', cartRouter);
 app.use('/api', orderRouter);
+app.use('/api', invoiceRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
