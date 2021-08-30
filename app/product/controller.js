@@ -34,12 +34,15 @@ async function index(req, res, next) {
       criteria = { ...criteria, tags: { $in: tags.map((tag) => tag._id) } };
     }
 
+    let count = await Product.find(criteria).countDocuments();
+
     let products = await Product.find(criteria)
       .limit(parseInt(limit))
       .skip(parseInt(skip))
       .populate('category')
-      .populate('tags');
-    return res.json(products);
+      .populate('tags')
+      .select('-__v');
+    return res.json({ data: products, count });
   } catch (err) {
     next(err);
   }
