@@ -4,6 +4,7 @@ const Tag = require('../tag/model');
 const path = require('path');
 const fs = require('fs');
 const config = require('../config');
+const { policyFor } = require('../policy');
 
 async function index(req, res, next) {
   try {
@@ -46,6 +47,15 @@ async function index(req, res, next) {
 
 async function store(req, res, next) {
   try {
+    let policy = policyFor(req.user);
+
+    if (!policy.can('create', 'Product')) {
+      return res.json({
+        error: 1,
+        message: 'Anda tidak memiliki akses untuk membuat produk',
+      });
+    }
+
     let payload = req.body;
 
     if (payload.category) {
@@ -108,6 +118,15 @@ async function store(req, res, next) {
 
 async function update(req, res, next) {
   try {
+    let policy = policyFor(req.user);
+
+    if (!policy.can('update', 'Product')) {
+      return res.json({
+        error: 1,
+        message: 'Anda tidak memiliki akses untuk mengupdate produk',
+      });
+    }
+
     let payload = req.body;
 
     let category = await Category.findOne({
@@ -187,6 +206,15 @@ async function update(req, res, next) {
 
 async function destroy(req, res, next) {
   try {
+    let policy = policyFor(req.user);
+
+    if (!policy.can('delete', 'Product')) {
+      return res.json({
+        error: 1,
+        message: 'Anda tidak memiliki akses untuk menghapus produk',
+      });
+    }
+
     let product = await Product.findOneAndDelete({ _id: req.params.id });
     let currentImage = `${config.rootPath}/public/upload/${product.image_url}`;
 
