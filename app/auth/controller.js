@@ -31,6 +31,8 @@ async function localStrategy(email, password, done) {
       '-__v -createdAt -updatedAt -cart_items -token',
     );
 
+    console.log('ok');
+
     if (!user) return done();
 
     if (bcrypt.compareSync(password, user.password)) {
@@ -46,6 +48,8 @@ async function localStrategy(email, password, done) {
 async function login(req, res, next) {
   passport.authenticate('local', async function (err, user) {
     if (err) return next(err);
+
+    console.log(user);
 
     if (!user)
       return res.json({ error: 1, message: 'email or password incorrect' });
@@ -63,6 +67,18 @@ async function login(req, res, next) {
       token: signed,
     });
   })(req, res, next);
+}
+
+async function guestlogin(req, res, next) {
+  let { username, notable } = req.body;
+  let signed = jwt.sign(username, config.secretKey);
+
+  return res.json({
+    message: 'logged in success',
+    username,
+    notable,
+    token: signed,
+  });
 }
 
 async function me(req, res, next) {
@@ -104,4 +120,5 @@ module.exports = {
   login,
   me,
   logout,
+  guestlogin,
 };

@@ -10,6 +10,12 @@ const productSchema = Schema(
       required: [true, 'Nama produk harus diisi'],
     },
 
+    variant: {
+      type: String,
+      minlength: [3, 'Panjang nama produk minimal 3 karakter'],
+      maxlength: [255, 'Panjang nama produk maksimal 255 karakter'],
+    },
+
     description: {
       type: String,
       maxlength: [700, 'Panjang deskripsi produk maksimal 255 karakter'],
@@ -18,6 +24,16 @@ const productSchema = Schema(
     price: {
       type: Number,
       default: 0,
+    },
+
+    rating: {
+      type: Number,
+      default: 4.5,
+    },
+
+    type: {
+      type: String,
+      minlength: [3, 'Panjang nama produk minimal 3 karakter'],
     },
 
     image_url: String,

@@ -52,12 +52,12 @@ async function store(req, res, next) {
   try {
     let policy = policyFor(req.user);
 
-    if (!policy.can('create', 'Product')) {
-      return res.json({
-        error: 1,
-        message: 'Anda tidak memiliki akses untuk membuat produk',
-      });
-    }
+    // if (!policy.can('create', 'Product')) {
+    //   return res.json({
+    //     error: 1,
+    //     message: 'Anda tidak memiliki akses untuk membuat produk',
+    //   });
+    // }
 
     let payload = req.body;
 
@@ -123,26 +123,28 @@ async function update(req, res, next) {
   try {
     let policy = policyFor(req.user);
 
-    if (!policy.can('update', 'Product')) {
-      return res.json({
-        error: 1,
-        message: 'Anda tidak memiliki akses untuk mengupdate produk',
-      });
-    }
+    // if (!policy.can('update', 'Product')) {
+    //   return res.json({
+    //     error: 1,
+    //     message: 'Anda tidak memiliki akses untuk mengupdate produk',
+    //   });
+    // }
 
     let payload = req.body;
 
-    let category = await Category.findOne({
-      name: {
-        $regex: payload.category,
-        $options: 'i',
-      },
-    });
-
     if (payload.category) {
-      payload = { ...payload, category: category._id };
-    } else {
-      delete payload.category;
+      let category = await Category.findOne({
+        name: {
+          $regex: payload.category,
+          $options: 'i',
+        },
+      });
+
+      if (category) {
+        payload = { ...payload, category: category._id };
+      } else {
+        delete payload.category;
+      }
     }
 
     if (payload.tags && payload.tags.length) {

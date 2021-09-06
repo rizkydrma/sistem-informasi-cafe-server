@@ -3,6 +3,13 @@ const { AbilityBuilder, Ability } = require('@casl/ability');
 const policies = {
   guest(user, { can }) {
     can('read', 'Product');
+    can('view', 'Order');
+    can('create', 'Order');
+    can('read', 'Order', { user_id: user._id });
+    can('update', 'Order', { _id: user._id });
+
+    can('read', 'Card', { user_id: user._id });
+    can('update', 'Cart', { user_id: user._id });
   },
   user(user, { can }) {
     can('view', 'Order');

@@ -1,4 +1,4 @@
-const { getTOken } = require('../utils/get-token');
+const { getToken } = require('../utils/get-token');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const User = require('../user/model');

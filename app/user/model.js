@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { model, Schema } = mongoose;
 const bcrypt = require('bcrypt');
-const AutoIncrement = requier('mongoose-sequence')(mongoose);
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const HASH_ROUND = 10;
 
@@ -28,8 +28,8 @@ let userSchema = Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ['user', 'admin', 'guest'],
+      default: 'guest',
     },
     token: [String],
   },
