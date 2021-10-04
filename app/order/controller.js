@@ -16,18 +16,14 @@ async function index(req, res, next) {
   }
 
   try {
-    let { limit = 10, skip = 0 } = req.query;
-
     let count = await Order.find({ user: req.user._id }).countDocuments();
 
     let orders = await Order.find({ user: req.user._id })
-      .limit(parseInt(limit))
-      .skip(parseInt(skip))
       .populate('order_items')
       .sort('-createdAt');
 
     return res.json({
-      data: orders.map((order) => order.toJson({ virtuals: true })),
+      data: orders.map((order) => order.toJSON({ virtuals: true })),
       count,
     });
   } catch (err) {
@@ -43,6 +39,36 @@ async function index(req, res, next) {
   }
 }
 
+async function show(req, res, next) {
+  try {
+    let { order_id } = req.params;
+
+    let order = await Order.findOne({ _id: order_id })
+      .populate('order_items')
+      .populate('user');
+
+    let policy = policyFor(req.user);
+    let subjectOrder = subject('Order', {
+      ...order,
+      user_id: order.user._id,
+    });
+
+    if (!policy.can('read', subjectOrder)) {
+      return res.json({
+        error: 1,
+        message: 'Anda tidak memiliki akses untuk melihat invoice ini',
+      });
+    }
+
+    return res.json(order);
+  } catch (err) {
+    return res.json({
+      error: 1,
+      message: 'Error when getting order',
+    });
+  }
+}
+
 async function store(req, res, next) {
   let policy = policyFor(req.user);
 
@@ -54,6 +80,7 @@ async function store(req, res, next) {
   }
 
   try {
+    let payload = req.body;
     let items = await CartItem.find({ user: req.user._id }).populate('product');
 
     if (!items.length) {
@@ -66,6 +93,7 @@ async function store(req, res, next) {
     let order = new Order({
       _id: new mongoose.Types.ObjectId(),
       status: 'waiting_payment',
+      notable: payload.notable,
       user: req.user._id,
     });
 
@@ -86,7 +114,6 @@ async function store(req, res, next) {
 
     // clear cart items
     await CartItem.deleteMany({ user: req.user._id });
-    console.log(req.user._id);
 
     return res.json(order);
   } catch (err) {
@@ -105,4 +132,5 @@ async function store(req, res, next) {
 module.exports = {
   store,
   index,
+  show,
 };

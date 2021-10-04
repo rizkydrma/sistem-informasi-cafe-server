@@ -31,8 +31,6 @@ async function localStrategy(email, password, done) {
       '-__v -createdAt -updatedAt -cart_items -token',
     );
 
-    console.log('ok');
-
     if (!user) return done();
 
     if (bcrypt.compareSync(password, user.password)) {
@@ -48,8 +46,6 @@ async function localStrategy(email, password, done) {
 async function login(req, res, next) {
   passport.authenticate('local', async function (err, user) {
     if (err) return next(err);
-
-    console.log(user);
 
     if (!user)
       return res.json({ error: 1, message: 'email or password incorrect' });

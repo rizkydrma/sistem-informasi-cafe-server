@@ -48,6 +48,22 @@ async function index(req, res, next) {
   }
 }
 
+async function show(req, res, next) {
+  try {
+    let { product_id } = req.params;
+
+    let product = await Product.findOne({ _id: product_id }).populate(
+      'category',
+    );
+    return res.json(product);
+  } catch (err) {
+    return res.json({
+      error: 1,
+      message: 'Error when getting Product',
+    });
+  }
+}
+
 async function store(req, res, next) {
   try {
     let policy = policyFor(req.user);
@@ -237,4 +253,5 @@ module.exports = {
   store,
   update,
   destroy,
+  show,
 };

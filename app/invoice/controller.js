@@ -8,7 +8,15 @@ async function show(req, res, next) {
 
     let invoice = await Invoice.findOne({ order: order_id })
       .populate('order')
-      .populate('user');
+      .populate({
+        path: 'user',
+        populate: [
+          {
+            path: 'order_items',
+            model: 'OrderItem',
+          },
+        ],
+      });
 
     let policy = policyFor(req.user);
 

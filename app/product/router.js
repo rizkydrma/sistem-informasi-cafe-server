@@ -3,6 +3,7 @@ const productController = require('./controller');
 const multer = require('multer');
 const os = require('os');
 
+router.get('/products/:product_id', productController.show);
 router.get('/products', productController.index);
 
 router.post(

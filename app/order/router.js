@@ -4,5 +4,6 @@ const orderController = require('./controller');
 
 router.post('/orders', multer().none(), orderController.store);
 router.get('/orders', orderController.index);
+router.get('/orders/:order_id', orderController.show);
 
 module.exports = router;

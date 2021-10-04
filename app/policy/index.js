@@ -8,8 +8,15 @@ const policies = {
     can('read', 'Order', { user_id: user._id });
     can('update', 'Order', { _id: user._id });
 
-    can('read', 'Card', { user_id: user._id });
+    can('read', 'Liked', { user_id: user._id });
+    can('update', 'Liked', { user_id: user._id });
+    can('read', 'Cart', { user_id: user._id });
     can('update', 'Cart', { user_id: user._id });
+
+    can('view', 'Table', { user_id: user._id });
+    can('update', 'Table', { user_ud: user._id });
+
+    can('read', 'Invoice', { user_id: user._id });
   },
   user(user, { can }) {
     can('view', 'Order');

@@ -6,14 +6,23 @@ const Invoice = require('../invoice/model');
 
 const orderSchema = Schema(
   {
-    status: {
+    status_payment: {
       type: String,
-      enum: ['waiting_payment', 'processing', 'in_delivery', 'delivered'],
+      enum: ['waiting_payment', 'done'],
       default: 'waiting_payment',
+    },
+    status_order: {
+      type: String,
+      enum: ['preparing', 'delivery', 'delivered'],
+      default: 'preparing',
     },
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
+    },
+    notable: {
+      type: Number,
+      required: [true, 'Notable harus diisi'],
     },
     order_items: [
       {
@@ -43,7 +52,7 @@ orderSchema.post('save', async function () {
     user: this.user,
     order: this._id,
     sub_total: sub_total,
-    total: sub_total,
+    total: sub_total + sub_total * 0.1,
   });
 
   await invoice.save();

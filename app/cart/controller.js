@@ -15,16 +15,15 @@ async function update(req, res, next) {
   try {
     const { items } = req.body;
 
-    const productIds = items.map((itm) => itm._id);
+    const productIds = items.map((itm) => itm.product._id);
 
     const products = await Product.find({ _id: { $in: productIds } });
 
     let cartItems = items.map((item) => {
       let relatedProduct = products.find(
-        (product) => product._id.toString() === item._id,
+        (product) => product._id.toString() === item.product._id,
       );
       return {
-        _id: relatedProduct._id,
         product: relatedProduct._id,
         price: relatedProduct.price,
         image_url: relatedProduct.image_url,
@@ -40,7 +39,10 @@ async function update(req, res, next) {
       cartItems.map((item) => {
         return {
           updateOne: {
-            filter: { user: req.user._id, product: item.product },
+            filter: {
+              user: req.user._id,
+              product: item.product,
+            },
             update: item,
             upsert: true,
           },
