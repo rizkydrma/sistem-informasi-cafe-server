@@ -6,14 +6,14 @@ const { policyFor } = require('../policy');
 const { subject } = require('@casl/ability');
 
 async function index(req, res, next) {
-  let policy = policyFor(req.user);
+  // let policy = policyFor(req.user);
 
-  if (!policy.can('view', 'Order')) {
-    return res.json({
-      error: 1,
-      message: `Youre not allowed to perform this action`,
-    });
-  }
+  // if (!policy.can('view', 'Order')) {
+  //   return res.json({
+  //     error: 1,
+  //     message: `Youre not allowed to perform this action`,
+  //   });
+  // }
 
   try {
     let count = await Order.find({ user: req.user._id }).countDocuments();
@@ -129,8 +129,26 @@ async function store(req, res, next) {
   }
 }
 
+async function getAllData(req, res, next) {
+  try {
+    let { limit, skip } = req.query;
+
+    let count = await Order.find().countDocuments();
+
+    let orders = await Order.find()
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .populate('order_items')
+      .populate('user');
+    return res.json({ data: orders, count });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   store,
   index,
   show,
+  getAllData,
 };

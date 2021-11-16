@@ -15,6 +15,9 @@ const invoiceRouter = require('./app/invoice/router');
 const tableRouter = require('./app/table/router');
 const likedRouter = require('./app/liked/router');
 
+// SERVER
+const dashboardController = require('./app/dashboard/router');
+
 const { decodeToken } = require('./app/auth/middleware');
 
 var app = express();
@@ -42,6 +45,9 @@ app.use('/api', orderRouter);
 app.use('/api', invoiceRouter);
 app.use('/api', tableRouter);
 app.use('/api', likedRouter);
+
+// SERVER
+app.use('/api', dashboardController);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

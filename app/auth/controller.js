@@ -65,16 +65,29 @@ async function login(req, res, next) {
   })(req, res, next);
 }
 
-async function guestlogin(req, res, next) {
-  let { username, notable } = req.body;
-  let signed = jwt.sign(username, config.secretKey);
+async function adminlogin(req, res, next) {
+  passport.authenticate('local', async function (err, user) {
+    if (err) return next(err);
 
-  return res.json({
-    message: 'logged in success',
-    username,
-    notable,
-    token: signed,
-  });
+    if (!user)
+      return res.json({ error: 1, message: 'email or password incorrect' });
+
+    if (!user.role === 'guest')
+      return res.json({ error: 1, message: 'You not have access to login' });
+
+    let signed = jwt.sign(user, config.secretKey);
+    await User.findOneAndUpdate(
+      { _id: user._id },
+      { $push: { token: signed } },
+      { new: true },
+    );
+
+    return res.json({
+      message: 'logged in successfully',
+      user: user,
+      token: signed,
+    });
+  })(req, res, next);
 }
 
 async function me(req, res, next) {
@@ -116,5 +129,5 @@ module.exports = {
   login,
   me,
   logout,
-  guestlogin,
+  adminlogin,
 };

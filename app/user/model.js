@@ -13,9 +13,9 @@ let userSchema = Schema(
       maxlength: [255, 'Panjang nama harus antara 3 - 255 karakter'],
       minlength: [3, 'Panjang nama harus antara 3 - 255 karakter'],
     },
-    customer_id: {
-      type: Number,
-    },
+    // customer_id: {
+    //   type: Number,
+    // },
     email: {
       type: String,
       required: [true, 'Email harus diisi'],
@@ -65,6 +65,6 @@ userSchema.pre('save', function (next) {
   next();
 });
 
-userSchema.plugin(AutoIncrement, { inc_field: 'customer_id' });
+// userSchema.plugin(AutoIncrement, { inc_field: 'customer_id' });
 
 module.exports = model('User', userSchema);

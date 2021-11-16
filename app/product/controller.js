@@ -68,12 +68,12 @@ async function store(req, res, next) {
   try {
     let policy = policyFor(req.user);
 
-    // if (!policy.can('create', 'Product')) {
-    //   return res.json({
-    //     error: 1,
-    //     message: 'Anda tidak memiliki akses untuk membuat produk',
-    //   });
-    // }
+    if (!policy.can('create', 'Product')) {
+      return res.json({
+        error: 1,
+        message: 'Anda tidak memiliki akses untuk membuat produk',
+      });
+    }
 
     let payload = req.body;
 

@@ -8,7 +8,7 @@ passport.use(
   new LocalStrategy({ usernameField: 'email' }, controller.localStrategy),
 );
 
-router.post('/guestlogin', multer().none(), controller.guestlogin);
+router.post('/adminlogin', multer().none(), controller.adminlogin);
 router.post('/register', multer().none(), controller.register);
 router.post('/login', multer().none(), controller.login);
 router.get('/me', controller.me);
