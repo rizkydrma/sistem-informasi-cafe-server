@@ -81,7 +81,7 @@ async function getDataDashboard(req, res, next) {
         .map((order) => order.toJSON({ virtuals: true }))
         .sort((a, b) => b.order_number - a.order_number)
         .slice(0, 5),
-      topProducts: orderItems.slice(0, 9),
+      topProducts: orderItems.slice(0, 6),
       orders: {
         totalOrdersChart: totalOrdersChart.sort(
           (a, b) => a._id.slice(8, 10) - b._id.slice(8, 10),
