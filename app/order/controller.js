@@ -6,14 +6,14 @@ const { policyFor } = require('../policy');
 const { subject } = require('@casl/ability');
 
 async function index(req, res, next) {
-  // let policy = policyFor(req.user);
+  let policy = policyFor(req.user);
 
-  // if (!policy.can('view', 'Order')) {
-  //   return res.json({
-  //     error: 1,
-  //     message: `Youre not allowed to perform this action`,
-  //   });
-  // }
+  if (!policy.can('view', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
 
   try {
     let count = await Order.find({ user: req.user._id }).countDocuments();
@@ -130,6 +130,14 @@ async function store(req, res, next) {
 }
 
 async function getAllData(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('view', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
   try {
     let { limit, skip } = req.query;
 
@@ -146,9 +154,60 @@ async function getAllData(req, res, next) {
   }
 }
 
+async function update(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('update', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
+  try {
+    let payload = req.body;
+
+    let order = await Order.findOneAndUpdate({ _id: req.params.id }, payload, {
+      new: true,
+      runValidators: true,
+    });
+
+    return res.json(order);
+  } catch (err) {
+    if (err && err.name === 'ValidationError') {
+      return res.json({
+        error: 1,
+        message: err.message,
+        fields: err.errors,
+      });
+    }
+
+    next(err);
+  }
+}
+
+async function destroy(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('update', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
+
+  try {
+    let deleted = await Order.findOneAndDelete({ _id: req.params.id });
+    return res.json(deleted);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   store,
   index,
   show,
   getAllData,
+  update,
+  destroy,
 };
