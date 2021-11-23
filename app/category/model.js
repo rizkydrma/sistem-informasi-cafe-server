@@ -8,6 +8,9 @@ let categorySchema = Schema({
     maxLength: [20, 'Panjang nama kategori maksimal 20 karakter'],
     required: [true, 'Nama kategori harus diisi'],
   },
+  color: {
+    type: String,
+  },
 });
 
 module.exports = model('Category', categorySchema);

@@ -1,6 +1,30 @@
 const Category = require('./model');
 const { policyFor } = require('../policy');
 
+async function index(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('view', 'Category')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
+  try {
+    let { limit, skip } = req.query;
+
+    let count = await Category.find().countDocuments();
+
+    let categories = await Category.find()
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    return res.json({ data: categories, count });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function store(req, res, next) {
   try {
     let policy = policyFor(req.user);
@@ -81,6 +105,7 @@ async function destroy(req, res, next) {
 }
 
 module.exports = {
+  index,
   store,
   update,
   destroy,

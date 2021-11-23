@@ -35,7 +35,7 @@ async function index(req, res, next) {
     }
 
     let count = await Product.find(criteria).countDocuments();
-
+    console.log(limit, skip);
     let products = await Product.find(criteria)
       .limit(parseInt(limit))
       .skip(parseInt(skip))
@@ -97,6 +97,8 @@ async function store(req, res, next) {
       }
     }
 
+    console.log(req.file);
+
     if (req.file) {
       let tmp_path = req.file.path;
       let originalExt =
@@ -139,12 +141,12 @@ async function update(req, res, next) {
   try {
     let policy = policyFor(req.user);
 
-    // if (!policy.can('update', 'Product')) {
-    //   return res.json({
-    //     error: 1,
-    //     message: 'Anda tidak memiliki akses untuk mengupdate produk',
-    //   });
-    // }
+    if (!policy.can('update', 'Product')) {
+      return res.json({
+        error: 1,
+        message: 'Anda tidak memiliki akses untuk mengupdate produk',
+      });
+    }
 
     let payload = req.body;
 
