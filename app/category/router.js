@@ -3,6 +3,7 @@ const multer = require('multer');
 const categoryController = require('./controller');
 
 router.get('/categories', categoryController.index);
+router.get('/categories/:id', categoryController.show);
 router.post('/categories', multer().none(), categoryController.store);
 router.put('/categories/:id', multer().none(), categoryController.update);
 router.delete('/categories/:id', categoryController.destroy);

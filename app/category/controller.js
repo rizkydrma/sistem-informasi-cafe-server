@@ -104,9 +104,33 @@ async function destroy(req, res, next) {
   }
 }
 
+async function show(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('view', 'Category')) {
+    return res.json({
+      error: 1,
+      message: `Anda tidak memiliki akses untuk menghapus kategori`,
+    });
+  }
+  try {
+    let { id } = req.params;
+
+    let category = await Category.findOne({ _id: id });
+
+    return res.json(category);
+  } catch (err) {
+    return res.json({
+      error: 1,
+      message: 'Error when getting category',
+    });
+  }
+}
+
 module.exports = {
   index,
   store,
   update,
   destroy,
+  show,
 };
