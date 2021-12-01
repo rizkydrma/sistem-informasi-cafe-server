@@ -53,9 +53,11 @@ async function login(req, res, next) {
     let signed = jwt.sign(user, config.secretKey);
     await User.findOneAndUpdate(
       { _id: user._id },
-      { $push: { token: signed } },
+      { $push: { token: signed }, $set: { active: 'active' } },
       { new: true },
     );
+    let customerCount = await User.find({ active: 'active' }).countDocuments();
+    req.io.sockets.emit(`customerCount`, { customerCount: customerCount });
 
     return res.json({
       message: 'logged in successfully',
@@ -106,7 +108,7 @@ async function logout(req, res, next) {
 
   let user = await User.findOneAndUpdate(
     { token: { $in: [token] } },
-    { $pull: { token } },
+    { $pull: { token }, $set: { active: 'deactive' } },
     { useFindAndModify: false },
   );
 
@@ -116,6 +118,9 @@ async function logout(req, res, next) {
       message: 'No user found',
     });
   }
+
+  let customerCount = await User.find({ active: 'active' }).countDocuments();
+  req.io.sockets.emit(`customerCount`, { customerCount: customerCount });
 
   return res.json({
     error: 0,

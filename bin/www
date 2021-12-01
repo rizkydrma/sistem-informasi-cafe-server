@@ -4,8 +4,8 @@
  * Module dependencies.
  */
 
-var app = require('../app');
-var debug = require('debug')('server:server');
+var app = require('../app').app;
+var debug = require('debug')('socketiotest:server');
 var http = require('http');
 const db = require('../database');
 
@@ -20,7 +20,7 @@ app.set('port', port);
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+var server = require('../app').server;
 
 /**
  * Listen on provided port, on all network interfaces.

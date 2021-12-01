@@ -41,9 +41,9 @@ async function index(req, res, next) {
 
 async function show(req, res, next) {
   try {
-    let { order_id } = req.params;
+    let { id } = req.params;
 
-    let order = await Order.findOne({ _id: order_id })
+    let order = await Order.findOne({ _id: id })
       .populate('order_items')
       .populate('user');
 
@@ -115,6 +115,87 @@ async function store(req, res, next) {
     // clear cart items
     await CartItem.deleteMany({ user: req.user._id });
 
+    // SOCKET
+
+    let date = new Date();
+    let nowMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
+
+    let sumOrdersChart = await Order.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    let latestOrders = await Order.find()
+      .populate('order_items')
+      .populate('user');
+
+    let totalSumOrders = latestOrders
+      .map((order) => order.toJSON({ virtuals: true }))
+      .filter((order) => order.createdAt.toISOString().slice(0, 7) == nowMonth)
+      .map((order) => {
+        return order.order_items.reduce(
+          (acc, curr) => acc + curr.price * curr.qty,
+          0,
+        );
+      })
+      .reduce((acc, curr) => acc + curr);
+
+    let grandTotal = totalSumOrders + totalSumOrders * 0.1;
+    let totalOrders = latestOrders.length;
+
+    let orderItemsSocket = await OrderItem.aggregate([
+      {
+        $group: {
+          _id: '$name',
+          qty: { $sum: '$qty' },
+        },
+      },
+    ]).sort('-qty');
+
+    let totalOrdersChart = latestOrders
+      .map((order) => order.toJSON({ virtuals: true }))
+      .filter((order) => order.createdAt.toISOString().slice(0, 7) == nowMonth)
+      .map((order) => ({
+        _id: order.createdAt.toISOString().slice(0, 10),
+        totalAmount: order.order_items.reduce(
+          (acc, curr) => acc + curr.price * curr.qty,
+          0,
+        ),
+      }))
+      .reduce((acc, curr) => {
+        let item = acc.find((item) => item._id === curr._id);
+
+        if (item) {
+          item.totalAmount += curr.totalAmount;
+        } else {
+          acc.push(curr);
+        }
+
+        return acc;
+      }, []);
+
+    req.io.sockets.emit('newOrders', {
+      latestOrders: latestOrders
+        .map((order) => order.toJSON({ virtuals: true }))
+        .sort((a, b) => b.order_number - a.order_number)
+        .slice(0, 5),
+      topProducts: orderItemsSocket.slice(0, 6),
+      orders: {
+        totalOrdersChart: totalOrdersChart.sort(
+          (a, b) => a._id.slice(8, 10) - b._id.slice(8, 10),
+        ),
+        sumOrdersChart: sumOrdersChart.sort(
+          (a, b) => a._id.slice(8, 10) - b._id.slice(8, 10),
+        ),
+      },
+      grandTotal,
+      totalOrders,
+    });
+
     return res.json(order);
   } catch (err) {
     if (err && err.name === 'ValidationError') {
@@ -147,7 +228,8 @@ async function getAllData(req, res, next) {
       .limit(parseInt(limit))
       .skip(parseInt(skip))
       .populate('order_items')
-      .populate('user');
+      .populate('user')
+      .sort('-createdAt');
     return res.json({ data: orders, count });
   } catch (err) {
     next(err);
@@ -165,11 +247,16 @@ async function update(req, res, next) {
   }
   try {
     let payload = req.body;
+    let { id } = req.params;
 
     let order = await Order.findOneAndUpdate({ _id: req.params.id }, payload, {
       new: true,
       runValidators: true,
-    });
+    })
+      .populate('order_items')
+      .populate('user');
+
+    req.io.sockets.emit(`progressOrder-${order._id}`, { order: order });
 
     return res.json(order);
   } catch (err) {

@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var http = require('http');
+var socketio = require('socket.io');
 const cors = require('cors');
 
 const productRouter = require('./app/product/router');
@@ -14,6 +16,7 @@ const orderRouter = require('./app/order/router');
 const invoiceRouter = require('./app/invoice/router');
 const tableRouter = require('./app/table/router');
 const likedRouter = require('./app/liked/router');
+const userRouter = require('./app/user/router');
 
 // SERVER
 const dashboardController = require('./app/dashboard/router');
@@ -21,6 +24,14 @@ const dashboardController = require('./app/dashboard/router');
 const { decodeToken } = require('./app/auth/middleware');
 
 var app = express();
+const server = require('http').createServer(app);
+const io = socketio(server);
+
+io.on('connection', function (socket) {
+  socket.on('disconnect', function () {
+    console.log('disconnected');
+  });
+});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -29,6 +40,10 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(function (req, res, next) {
+  req.io = io;
+  next();
+});
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -45,6 +60,7 @@ app.use('/api', orderRouter);
 app.use('/api', invoiceRouter);
 app.use('/api', tableRouter);
 app.use('/api', likedRouter);
+app.use('/api', userRouter);
 
 // SERVER
 app.use('/api', dashboardController);
@@ -65,4 +81,4 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+module.exports = { app: app, server: server, io };

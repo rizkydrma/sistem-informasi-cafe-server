@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Order = require('../order/model');
 const OrderItem = require('../order-item/model');
+const User = require('../user/model');
 const { policyFor } = require('../policy');
 const { subject } = require('@casl/ability');
 
@@ -17,7 +18,7 @@ async function getDataDashboard(req, res, next) {
   try {
     let date = new Date();
     let nowMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
-
+    let customerCount = await User.find({ active: 'active' }).countDocuments();
     let sumOrdersChart = await Order.aggregate([
       {
         $group: {
@@ -92,6 +93,7 @@ async function getDataDashboard(req, res, next) {
       },
       grandTotal,
       totalOrders,
+      customerCount,
     });
   } catch (err) {
     if (err && err.name === 'ValidationError') {
@@ -106,6 +108,16 @@ async function getDataDashboard(req, res, next) {
   }
 }
 
+// io.on('connection', (socket) => {
+//   let latestOrders = Order.find()
+//     .populate('order_items')
+//     .populate('user')
+//     .map((order) => order.toJSON({ virtuals: true }))
+//     .sort((a, b) => b.order_number - a.order_number)
+//     .slice(0, 5);
+
+//   socket.emit('latest-orders', { latestOrders: latestOrders });
+// });
 module.exports = {
   getDataDashboard,
 };

@@ -21,6 +21,7 @@ let userSchema = Schema(
       required: [true, 'Email harus diisi'],
       maxlength: [255, 'Panjang email maksimal 255 karakter'],
     },
+    image_url: String,
     password: {
       type: String,
       required: [true, 'Password harus diisi'],
@@ -28,10 +29,15 @@ let userSchema = Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin', 'guest'],
+      enum: ['user', 'admin', 'guest', 'kitchen', 'waiter', 'cashier'],
       default: 'guest',
     },
     token: [String],
+    active: {
+      type: String,
+      enum: ['deactive', 'active', 'suspend'],
+      default: 'deactive',
+    },
   },
   { timestamps: true },
 );
