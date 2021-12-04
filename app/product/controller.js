@@ -29,18 +29,12 @@ async function index(req, res, next) {
       }
     }
 
-    if (tags.length) {
-      tags = await Tag.find({ name: { $in: tags } });
-      criteria = { ...criteria, tags: { $in: tags.map((tag) => tag._id) } };
-    }
-
     let count = await Product.find(criteria).countDocuments();
 
     let products = await Product.find(criteria)
       .limit(parseInt(limit))
       .skip(parseInt(skip))
       .populate('category')
-      .populate('tags')
       .select('-__v');
     return res.json({ data: products, count });
   } catch (err) {
@@ -200,6 +194,14 @@ async function update(req, res, next) {
           { ...payload, image_url: filename },
           { new: true, runValidators: true },
         );
+        req.io.sockets.emit(`stockProduct-${product._id}`, {
+          stock: product.stock,
+        });
+
+        req.io.sockets.emit('stockProduct', {
+          _id: product._id,
+          stock: product.stock,
+        });
         return res.json(product);
       });
       src.on('error', async () => {
@@ -212,6 +214,14 @@ async function update(req, res, next) {
         payload,
         { new: true, runValidators: true },
       );
+      req.io.sockets.emit(`stockProduct-${product._id}`, {
+        stock: product.stock,
+      });
+
+      req.io.sockets.emit('stockProduct', {
+        _id: product._id,
+        stock: product.stock,
+      });
       return res.json(product);
     }
   } catch (err) {

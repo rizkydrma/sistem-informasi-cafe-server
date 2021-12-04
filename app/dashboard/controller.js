@@ -6,19 +6,22 @@ const { policyFor } = require('../policy');
 const { subject } = require('@casl/ability');
 
 async function getDataDashboard(req, res, next) {
-  // let policy = policyFor(req.user);
+  let policy = policyFor(req.user);
 
-  // if (!policy.can('view', 'Order')) {
-  //   return res.json({
-  //     error: 1,
-  //     message: `You're not allowed to perform this action`,
-  //   });
-  // }
+  if (!policy.can('view', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `You're not allowed to perform this action`,
+    });
+  }
 
   try {
     let date = new Date();
     let nowMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
-    let customerCount = await User.find({ active: 'active' }).countDocuments();
+    let customerCount = await User.find({
+      active: 'active',
+      role: 'guest',
+    }).countDocuments();
     let sumOrdersChart = await Order.aggregate([
       {
         $group: {

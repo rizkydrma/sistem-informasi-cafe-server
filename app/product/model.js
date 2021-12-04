@@ -42,13 +42,11 @@ const productSchema = Schema(
       type: Schema.Types.ObjectId,
       ref: 'Category',
     },
-
-    tags: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Tag',
-      },
-    ],
+    stock: {
+      type: String,
+      enum: ['in stock', 'out of stock'],
+      default: 'in stock',
+    },
   },
   { timestamps: true },
 );
