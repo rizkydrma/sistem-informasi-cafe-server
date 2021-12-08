@@ -38,8 +38,6 @@ async function store(req, res, next) {
   }
   try {
     let payload = req.body;
-    console.log(req.file);
-    console.log(payload);
     if (req.file) {
       let tmp_path = req.file.path;
       let originalExt =
@@ -55,7 +53,6 @@ async function store(req, res, next) {
       const dest = fs.createWriteStream(target_path);
       src.pipe(dest);
       src.on('end', async () => {
-        console.log({ ...payload, image_url: filename });
         let user = new User({ ...payload, image_url: filename });
 
         await user.save();

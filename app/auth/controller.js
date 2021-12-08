@@ -51,7 +51,6 @@ async function login(req, res, next) {
       return res.json({ error: 1, message: 'email or password incorrect' });
 
     let signed = jwt.sign(user, config.secretKey);
-    console.log(signed);
     await User.findOneAndUpdate(
       { _id: user._id },
       { $push: { token: signed }, $set: { active: 'active' } },
@@ -61,7 +60,6 @@ async function login(req, res, next) {
       active: 'active',
       role: 'guest',
     }).countDocuments();
-    console.log(customerCount);
     req.io.sockets.emit(`customerCount`, { customerCount: customerCount });
 
     return res.json({

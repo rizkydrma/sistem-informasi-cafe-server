@@ -48,12 +48,12 @@ async function show(req, res, next) {
       .populate('user');
 
     let policy = policyFor(req.user);
-    let subjectOrder = subject('Order', {
-      ...order,
-      user_id: order.user._id,
-    });
+    // let subjectOrder = subject('Order', {
+    //   ...order,
+    //   user_id: order.user._id,
+    // });
 
-    if (!policy.can('read', subjectOrder)) {
+    if (!policy.can('read', 'Order')) {
       return res.json({
         error: 1,
         message: 'Anda tidak memiliki akses untuk melihat invoice ini',
@@ -290,6 +290,53 @@ async function destroy(req, res, next) {
   }
 }
 
+async function getOrdersByID(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('view', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
+
+  try {
+    const { id } = req.params;
+
+    let order = await Order.find({ user: id })
+      .populate('order_items')
+      .populate('user');
+
+    return res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function updateStatusPaymentsByID(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('update', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
+
+  try {
+    const { id } = req.params;
+
+    let orders = await Order.updateMany(
+      { user: id },
+      { $set: { status_payment: 'done' } },
+    );
+
+    return res.json(orders);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   store,
   index,
@@ -297,4 +344,6 @@ module.exports = {
   getAllData,
   update,
   destroy,
+  getOrdersByID,
+  updateStatusPaymentsByID,
 };
