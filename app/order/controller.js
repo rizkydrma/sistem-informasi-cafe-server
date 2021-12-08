@@ -220,17 +220,51 @@ async function getAllData(req, res, next) {
     });
   }
   try {
-    let { limit, skip } = req.query;
+    let { limit, skip, date } = req.query;
 
-    let count = await Order.find().countDocuments();
+    if (date === undefined) {
+      let count = await Order.find().countDocuments();
 
-    let orders = await Order.find()
-      .limit(parseInt(limit))
-      .skip(parseInt(skip))
-      .populate('order_items')
-      .populate('user')
-      .sort('-createdAt');
-    return res.json({ data: orders, count });
+      let orders = await Order.find()
+        .limit(parseInt(limit))
+        .skip(parseInt(skip))
+        .populate('order_items')
+        .populate('user')
+        .sort('-createdAt');
+      return res.json({ data: orders, count });
+    } else {
+      let splitDate = date.split('-');
+      let startDate, endDate;
+
+      if (splitDate[2] === undefined) {
+        startDate = new Date(splitDate[0], +splitDate[1] - 1, 1);
+        endDate = new Date(splitDate[0], +splitDate[1], 1);
+      } else {
+        startDate = new Date(splitDate[0], +splitDate[1] - 1, splitDate[2]);
+        endDate = new Date(splitDate[0], +splitDate[1] - 1, +splitDate[2] + 1);
+      }
+
+      let count = await Order.find({
+        createdAt: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      }).countDocuments();
+
+      let orders = await Order.find({
+        createdAt: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      })
+        .limit(parseInt(limit))
+        .skip(parseInt(skip))
+        .populate('order_items')
+        .populate('user')
+        .sort('-createdAt');
+
+      return res.json({ data: orders, count });
+    }
   } catch (err) {
     next(err);
   }
