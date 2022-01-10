@@ -70,14 +70,14 @@ async function show(req, res, next) {
 }
 
 async function store(req, res, next) {
-  let policy = policyFor(req.user);
+  // let policy = policyFor(req.user);
 
-  if (!policy.can('create', 'Order')) {
-    return res.json({
-      error: 1,
-      message: `Youre not allowed to perform this action`,
-    });
-  }
+  // if (!policy.can('create', 'Order')) {
+  //   return res.json({
+  //     error: 1,
+  //     message: `Youre not allowed to perform this action`,
+  //   });
+  // }
 
   try {
     let payload = req.body;
@@ -105,6 +105,7 @@ async function store(req, res, next) {
         price: parseInt(item.product.price),
         order: order._id,
         product: item.product._id,
+        variant: item.variant,
       })),
     );
 
@@ -118,7 +119,8 @@ async function store(req, res, next) {
     // SOCKET
 
     let date = new Date();
-    let nowMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    let month = ('0' + date.getMonth() + 1).slice(-2);
+    let nowMonth = `${date.getFullYear()}-${month}`;
 
     let sumOrdersChart = await Order.aggregate([
       {
@@ -220,9 +222,9 @@ async function getAllData(req, res, next) {
     });
   }
   try {
-    let { limit, skip, date } = req.query;
+    let { limit, skip, startDate, endDate } = req.query;
 
-    if (date === undefined) {
+    if (startDate === undefined || endDate === undefined) {
       let count = await Order.find().countDocuments();
 
       let orders = await Order.find()
@@ -233,28 +235,17 @@ async function getAllData(req, res, next) {
         .sort('-createdAt');
       return res.json({ data: orders, count });
     } else {
-      let splitDate = date.split('-');
-      let startDate, endDate;
-
-      if (splitDate[2] === undefined) {
-        startDate = new Date(splitDate[0], +splitDate[1] - 1, 1);
-        endDate = new Date(splitDate[0], +splitDate[1], 1);
-      } else {
-        startDate = new Date(splitDate[0], +splitDate[1] - 1, splitDate[2]);
-        endDate = new Date(splitDate[0], +splitDate[1] - 1, +splitDate[2] + 1);
-      }
-
       let count = await Order.find({
         createdAt: {
-          $gte: startDate,
-          $lt: endDate,
+          $gte: new Date(startDate),
+          $lt: new Date(endDate),
         },
       }).countDocuments();
 
       let orders = await Order.find({
         createdAt: {
-          $gte: startDate,
-          $lt: endDate,
+          $gte: new Date(startDate),
+          $lt: new Date(endDate),
         },
       })
         .limit(parseInt(limit))
@@ -265,6 +256,44 @@ async function getAllData(req, res, next) {
 
       return res.json({ data: orders, count });
     }
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function generateReport(req, res, next) {
+  let policy = policyFor(req.user);
+
+  if (!policy.can('view', 'Order')) {
+    return res.json({
+      error: 1,
+      message: `Youre not allowed to perform this action`,
+    });
+  }
+  try {
+    let { startDate, endDate } = req.query;
+
+    let orders = await Order.find({
+      createdAt: {
+        $gte: new Date(startDate),
+        $lt: new Date(endDate),
+      },
+    }).select('_id');
+
+    let newOrders = [];
+    orders.forEach((item) => {
+      newOrders.push(item._id.toString());
+    });
+
+    let orderItems = await OrderItem.find()
+      .populate('order')
+      .select('-__v -product -_id');
+
+    let result = orderItems.filter((item) =>
+      newOrders.includes(item.order._id.toString()),
+    );
+
+    return res.json({ data: result, count: result.length });
   } catch (err) {
     next(err);
   }
@@ -376,6 +405,7 @@ module.exports = {
   index,
   show,
   getAllData,
+  generateReport,
   update,
   destroy,
   getOrdersByID,

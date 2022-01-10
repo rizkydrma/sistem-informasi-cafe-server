@@ -9,13 +9,6 @@ const productSchema = Schema(
       maxlength: [255, 'Panjang nama produk maksimal 255 karakter'],
       required: [true, 'Nama produk harus diisi'],
     },
-
-    variant: {
-      type: String,
-      minlength: [3, 'Panjang nama produk minimal 3 karakter'],
-      maxlength: [255, 'Panjang nama produk maksimal 255 karakter'],
-    },
-
     description: {
       type: String,
       maxlength: [700, 'Panjang deskripsi produk maksimal 255 karakter'],
@@ -31,9 +24,13 @@ const productSchema = Schema(
       default: 4.5,
     },
 
-    type: {
+    variant: {
       type: String,
-      minlength: [3, 'Panjang nama produk minimal 3 karakter'],
+    },
+
+    type: {
+      type: Boolean,
+      default: false,
     },
 
     image_url: String,

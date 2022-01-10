@@ -12,6 +12,8 @@ router.get('/ordersPayment/:id', orderController.updateStatusPaymentsByID);
 
 router.get('/allOrders', orderController.getAllData);
 
+router.get('/generateReport', orderController.generateReport);
+
 router.delete('/orders/:id', orderController.destroy);
 
 module.exports = router;

@@ -9,7 +9,7 @@ async function register(req, res, next) {
   try {
     let payload = req.body;
 
-    let user = new User(payload);
+    let user = new User({ ...payload, image_url: 'user.jpg' });
 
     await user.save();
     return res.json(user);

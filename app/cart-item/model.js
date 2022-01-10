@@ -25,6 +25,9 @@ const cartItemSchema = Schema({
     type: Schema.Types.ObjectId,
     ref: 'Product',
   },
+  variant: {
+    type: String,
+  },
 });
 
 module.exports = model('CartItem', cartItemSchema);

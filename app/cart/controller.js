@@ -30,6 +30,7 @@ async function update(req, res, next) {
         name: relatedProduct.name,
         user: req.user._id,
         qty: item.qty,
+        variant: item.variant,
       };
     });
 

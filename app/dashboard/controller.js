@@ -17,7 +17,8 @@ async function getDataDashboard(req, res, next) {
 
   try {
     let date = new Date();
-    let nowMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    let month = ('0' + date.getMonth() + 1).slice(-2);
+    let nowMonth = `${date.getFullYear()}-${month}`;
     let customerCount = await User.find({
       active: 'active',
       role: 'guest',

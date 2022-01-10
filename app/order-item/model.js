@@ -24,6 +24,9 @@ const orderItemSchema = Schema({
     type: Schema.Types.ObjectId,
     ref: 'Order',
   },
+  variant: {
+    type: String,
+  },
 });
 
 module.exports = model('OrderItem', orderItemSchema);

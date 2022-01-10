@@ -70,6 +70,8 @@ async function store(req, res, next) {
   try {
     let payload = req.body;
 
+    console.log(req.file);
+
     if (payload.category) {
       let category = await Category.findOne({
         name: { $regex: payload.category, $options: 'i' },

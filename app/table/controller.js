@@ -3,17 +3,9 @@ const User = require('../user/model');
 const { policyFor } = require('../policy');
 
 async function index(req, res, next) {
-  let policy = policyFor(req.user);
-
-  if (!policy.can('view', 'Table')) {
-    return res.json({
-      error: 1,
-      message: 'Youre not allowed to perform this action',
-    });
-  }
-
   try {
-    let tables = await Table.find().select('-__v');
+    let tables = await Table.find();
+
     return res.json(tables);
   } catch (err) {
     next(err);
@@ -21,15 +13,6 @@ async function index(req, res, next) {
 }
 
 async function store(req, res, next) {
-  let policy = policyFor(req.user);
-
-  if (!policy.can('view', 'Table')) {
-    return res.json({
-      error: 1,
-      message: 'Youre not allowed to perform this action',
-    });
-  }
-
   try {
     let payload = req.body;
     let table = new Table(payload);
