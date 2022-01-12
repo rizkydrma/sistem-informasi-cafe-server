@@ -16,14 +16,27 @@ async function getDataDashboard(req, res, next) {
   }
 
   try {
-    let date = new Date();
-    let month = ('0' + date.getMonth() + 1).slice(-2);
-    let nowMonth = `${date.getFullYear()}-${month}`;
+    const startDate = new Date();
+    const endDate = new Date();
+
+    startDate.setDate(1);
+    endDate.setMonth(startDate.getMonth() + 1);
+    endDate.setDate(1);
+
     let customerCount = await User.find({
       active: 'active',
       role: 'guest',
     }).countDocuments();
+
     let sumOrdersChart = await Order.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: startDate,
+            $lt: endDate,
+          },
+        },
+      },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
@@ -32,13 +45,17 @@ async function getDataDashboard(req, res, next) {
       },
     ]);
 
-    let latestOrders = await Order.find()
+    let latestOrders = await Order.find({
+      createdAt: {
+        $gte: startDate,
+        $lt: endDate,
+      },
+    })
       .populate('order_items')
       .populate('user');
 
     let totalSumOrders = latestOrders
       .map((order) => order.toJSON({ virtuals: true }))
-      .filter((order) => order.createdAt.toISOString().slice(0, 7) == nowMonth)
       .map((order) => {
         return order.order_items.reduce(
           (acc, curr) => acc + curr.price * curr.qty,
@@ -52,6 +69,14 @@ async function getDataDashboard(req, res, next) {
 
     let orderItems = await OrderItem.aggregate([
       {
+        $match: {
+          createdAt: {
+            $gte: startDate,
+            $lt: endDate,
+          },
+        },
+      },
+      {
         $group: {
           _id: '$name',
           qty: { $sum: '$qty' },
@@ -61,7 +86,6 @@ async function getDataDashboard(req, res, next) {
 
     let totalOrdersChart = latestOrders
       .map((order) => order.toJSON({ virtuals: true }))
-      .filter((order) => order.createdAt.toISOString().slice(0, 7) == nowMonth)
       .map((order) => ({
         _id: order.createdAt.toISOString().slice(0, 10),
         totalAmount: order.order_items.reduce(

@@ -17,6 +17,7 @@ const invoiceRouter = require('./app/invoice/router');
 const tableRouter = require('./app/table/router');
 const likedRouter = require('./app/liked/router');
 const userRouter = require('./app/user/router');
+const analyticsRouter = require('./app/analytics/router');
 
 // SERVER
 const dashboardController = require('./app/dashboard/router');
@@ -25,11 +26,15 @@ const { decodeToken } = require('./app/auth/middleware');
 
 var app = express();
 const server = require('http').createServer(app);
-const io = socketio(server);
+const io = socketio(server, {
+  pingTimeout: 30000,
+  transports: ['websocket'],
+  allowUpgrades: false,
+});
 
 io.on('connection', function (socket) {
-  socket.on('disconnect', function () {
-    console.log('disconnected');
+  socket.on('disconnect', (reason) => {
+    console.log(`disconnect reason: ${reason}`);
   });
 });
 
@@ -64,6 +69,7 @@ app.use('/api', userRouter);
 
 // SERVER
 app.use('/api', dashboardController);
+app.use('/api', analyticsRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
