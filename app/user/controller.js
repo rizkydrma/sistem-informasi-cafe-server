@@ -56,6 +56,10 @@ async function store(req, res, next) {
         let user = new User({ ...payload, image_url: filename });
 
         await user.save();
+
+        req.io.sockets.emit('thisNewUser', 'update data');
+        req.io.sockets.emit('thisNewCustomer', 'update data');
+
         return res.json(user);
       });
       src.on('error', async () => {
@@ -64,6 +68,9 @@ async function store(req, res, next) {
     } else {
       let user = new User({ ...payload, image_url: 'user.jpg' });
       await user.save();
+
+      req.io.sockets.emit('thisNewUser', 'update data');
+      req.io.sockets.emit('thisNewCustomer', 'update data');
       return res.json(user);
     }
   } catch (err) {
@@ -79,14 +86,14 @@ async function store(req, res, next) {
 }
 
 async function update(req, res, next) {
-  let policy = policyFor(req.user);
+  // let policy = policyFor(req.user);
 
-  if (!policy.can('update', 'User')) {
-    return res.json({
-      error: 1,
-      message: `Anda tidak memiliki akses untuk mengubah kategori`,
-    });
-  }
+  // if (!policy.can('update', 'User')) {
+  //   return res.json({
+  //     error: 1,
+  //     message: `Anda tidak memiliki akses untuk mengubah kategori`,
+  //   });
+  // }
 
   try {
     let payload = req.body;
@@ -121,6 +128,8 @@ async function update(req, res, next) {
           { ...payload, image_url: filename },
           { new: true, runValidators: true },
         );
+        req.io.sockets.emit('thisNewUser', 'update data');
+        req.io.sockets.emit('thisNewCustomer', 'update data');
         return res.json(user);
       });
       src.on('error', async () => {
@@ -132,6 +141,8 @@ async function update(req, res, next) {
         new: true,
         runValidators: true,
       });
+      req.io.sockets.emit('thisNewUser', 'update data');
+      req.io.sockets.emit('thisNewCustomer', 'update data');
       return res.json(user);
     }
   } catch (err) {
@@ -166,7 +177,8 @@ async function destroy(req, res, next) {
         fs.unlinkSync(currentImage);
       }
     }
-
+    req.io.sockets.emit('thisNewUser', 'update data');
+    req.io.sockets.emit('thisNewCustomer', 'update data');
     return res.json(user);
   } catch (err) {
     next(err);

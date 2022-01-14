@@ -47,7 +47,7 @@ async function getAnalytics(req, res, next) {
 
     sumOrdersChart.push({
       _id: date.toISOString().slice(0, 7),
-      totalAmount: generate(x.length + 1),
+      totalAmount: Math.round(generate(x.length + 1)),
     });
 
     res.json(sumOrdersChart.slice(0, 7));
@@ -131,9 +131,10 @@ async function getAnalyticsOneProduct(req, res, next) {
     let generate = lsq(x, y, ret);
 
     let newQty;
+
     generate(x.length + 1) < 0
       ? (newQty = 0)
-      : (newQty = generate(x.length + 1));
+      : (newQty = Math.round(generate(x.length + 1)));
     orderItems.push({
       _id: date.toISOString().slice(0, 7),
       qty: newQty,

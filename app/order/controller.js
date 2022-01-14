@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const Order = require('./model');
+const User = require('../user/model');
+const Invoice = require('../invoice/model');
 const OrderItem = require('../order-item/model');
 const CartItem = require('../cart-item/model');
 const { policyFor } = require('../policy');
@@ -118,106 +120,15 @@ async function store(req, res, next) {
 
     // SOCKET
 
-    const startDate = new Date();
-    const endDate = new Date();
-
-    startDate.setDate(1);
-    endDate.setMonth(startDate.getMonth() + 1);
-    endDate.setDate(1);
-
-    let sumOrdersChart = await Order.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gte: startDate,
-            $lt: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    let latestOrders = await Order.find({
-      createdAt: {
-        $gte: startDate,
-        $lt: endDate,
-      },
-    })
+    let lastAddOrder = await Order.find()
       .populate('order_items')
-      .populate('user');
+      .populate('user')
+      .sort({ createdAt: -1 });
 
-    let totalSumOrders = latestOrders
-      .map((order) => order.toJSON({ virtuals: true }))
-      .map((order) => {
-        return order.order_items.reduce(
-          (acc, curr) => acc + curr.price * curr.qty,
-          0,
-        );
-      })
-      .reduce((acc, curr) => acc + curr);
+    console.log(lastAddOrder[0]);
 
-    let grandTotal = totalSumOrders + totalSumOrders * 0.1;
-    let totalOrders = latestOrders.length;
-
-    let orderItemsSocket = await OrderItem.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gte: startDate,
-            $lt: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: '$name',
-          qty: { $sum: '$qty' },
-        },
-      },
-    ]).sort('-qty');
-
-    let totalOrdersChart = latestOrders
-      .map((order) => order.toJSON({ virtuals: true }))
-      .map((order) => ({
-        _id: order.createdAt.toISOString().slice(0, 10),
-        totalAmount: order.order_items.reduce(
-          (acc, curr) => acc + curr.price * curr.qty,
-          0,
-        ),
-      }))
-      .reduce((acc, curr) => {
-        let item = acc.find((item) => item._id === curr._id);
-
-        if (item) {
-          item.totalAmount += curr.totalAmount;
-        } else {
-          acc.push(curr);
-        }
-
-        return acc;
-      }, []);
-
-    req.io.sockets.emit('newOrders', {
-      latestOrders: latestOrders
-        .map((order) => order.toJSON({ virtuals: true }))
-        .sort((a, b) => b.order_number - a.order_number)
-        .slice(0, 5),
-      topProducts: orderItemsSocket.slice(0, 6),
-      orders: {
-        totalOrdersChart: totalOrdersChart.sort(
-          (a, b) => a._id.slice(8, 10) - b._id.slice(8, 10),
-        ),
-        sumOrdersChart: sumOrdersChart.sort(
-          (a, b) => a._id.slice(8, 10) - b._id.slice(8, 10),
-        ),
-      },
-      grandTotal,
-      totalOrders,
+    req.io.sockets.emit('thisNewOrder', {
+      data: lastAddOrder[0],
     });
 
     return res.json(order);
@@ -342,6 +253,7 @@ async function update(req, res, next) {
       .populate('user');
 
     req.io.sockets.emit(`progressOrder-${order._id}`, { order: order });
+    req.io.sockets.emit(`statusPayment-${order.user._id}`, { order });
 
     return res.json(order);
   } catch (err) {
@@ -372,8 +284,6 @@ async function destroy(req, res, next) {
       'order_items',
     );
 
-    console.log(order);
-
     order.order_items.forEach(async (orderItem) => {
       await OrderItem.findOneAndDelete({ _id: orderItem.id });
     });
@@ -398,12 +308,43 @@ async function getOrdersByID(req, res, next) {
   try {
     const { id } = req.params;
 
-    let order = await Order.find({ user: id })
-      .populate('order_items')
-      .populate('user');
+    if (validateEmail(id)) {
+      let user = await User.findOne({ email: id });
 
-    return res.json(order);
+      if (user === null) {
+        return res.json({
+          error: 1,
+          message: 'User tidak ada',
+        });
+      }
+
+      let order = await Order.find({ user: user._id })
+        .populate('order_items')
+        .populate('user');
+
+      return res.json(order);
+    } else {
+      if (id.match(/^[0-9a-fA-F]{24}$/)) {
+        // Yes, it's a valid ObjectId, proceed with `findById` call.
+        let order = await Order.find({ user: id })
+          .populate('order_items')
+          .populate('user');
+
+        return res.json(order);
+      }
+      return res.json({
+        error: 1,
+        message: 'User tidak ada',
+      });
+    }
   } catch (err) {
+    if (err) {
+      return res.json({
+        error: 1,
+        message: err.message,
+        fields: err.errors,
+      });
+    }
     next(err);
   }
 }
@@ -421,14 +362,46 @@ async function updateStatusPaymentsByID(req, res, next) {
   try {
     const { id } = req.params;
 
-    let orders = await Order.updateMany(
-      { user: id },
-      { $set: { status_payment: 'done' } },
-    );
+    if (validateEmail(id)) {
+      let user = await User.findOne({ email: id });
 
-    return res.json(orders);
+      let orders = await Order.updateMany(
+        { user: user._id },
+        { $set: { status_payment: 'done' } },
+      );
+
+      await Invoice.updateMany(
+        { user: user._id },
+        { $set: { payment_status: 'done' } },
+      );
+
+      req.io.sockets.emit(`statusPayment-${id}`, { orders });
+      return res.json(orders);
+    } else {
+      let orders = await Order.updateMany(
+        { user: id },
+        { $set: { status_payment: 'done' } },
+      );
+
+      await Invoice.updateMany(
+        { user: id },
+        { $set: { payment_status: 'done' } },
+      );
+
+      req.io.sockets.emit(`statusPayment-${id}`, { orders });
+      return res.json(orders);
+    }
   } catch (err) {
     next(err);
+  }
+}
+
+function validateEmail(emailAdress) {
+  let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+  if (emailAdress.match(regexEmail)) {
+    return true;
+  } else {
+    return false;
   }
 }
 

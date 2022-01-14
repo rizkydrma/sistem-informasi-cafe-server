@@ -52,23 +52,37 @@ userSchema.path('email').validate(
 );
 
 // VALIDASI EMAIL TERDAFTAR
-userSchema.path('email').validate(
-  async function (value) {
-    try {
-      const count = await this.model('User').count({ email: value });
-
+userSchema.path('email').validate(function (value, respond) {
+  return mongoose
+    .model('User')
+    .count({ email: value })
+    .exec()
+    .then(function (count) {
       return !count;
-    } catch (err) {
+    })
+    .catch(function (err) {
       throw err;
-    }
-  },
-  (attr) => `${attr.value} sudah terdaftar!`,
-);
+    });
+}, 'Email sudah terdaftar');
 
 // HASHING PASSWORD
 userSchema.pre('save', function (next) {
   this.password = bcrypt.hashSync(this.password, HASH_ROUND);
   next();
+});
+
+// HASHING PASSWORD
+userSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  if (update.password) {
+    this.getUpdate().password = bcrypt.hashSync(
+      this.getUpdate().password,
+      HASH_ROUND,
+    );
+    next();
+  } else {
+    next();
+  }
 });
 
 // userSchema.plugin(AutoIncrement, { inc_field: 'customer_id' });

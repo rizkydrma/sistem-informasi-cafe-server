@@ -11,6 +11,8 @@ async function register(req, res, next) {
 
     let user = new User({ ...payload, image_url: 'user.jpg' });
 
+    req.io.sockets.emit('thisNewCustomer', 'update data');
+
     await user.save();
     return res.json(user);
   } catch (err) {
