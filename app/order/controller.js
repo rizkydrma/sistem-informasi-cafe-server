@@ -18,9 +18,12 @@ async function index(req, res, next) {
   }
 
   try {
+    let { limit, skip } = req.query;
     let count = await Order.find({ user: req.user._id }).countDocuments();
 
     let orders = await Order.find({ user: req.user._id })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
       .populate('order_items')
       .sort('-createdAt');
 
@@ -129,6 +132,13 @@ async function store(req, res, next) {
 
     req.io.sockets.emit('thisNewOrder', {
       data: lastAddOrder[0],
+    });
+
+    let user = await User.findOne({ _id: req.user._id });
+
+    req.io.sockets.emit(`notifNewOrder`, {
+      type: 'preparing',
+      user: user.full_name,
     });
 
     return res.json(order);
@@ -245,6 +255,8 @@ async function update(req, res, next) {
     let payload = req.body;
     let { id } = req.params;
 
+    let oldOrder = await Order.findOne({ _id: req.params.id });
+
     let order = await Order.findOneAndUpdate({ _id: req.params.id }, payload, {
       new: true,
       runValidators: true,
@@ -252,8 +264,20 @@ async function update(req, res, next) {
       .populate('order_items')
       .populate('user');
 
-    req.io.sockets.emit(`progressOrder-${order._id}`, { order: order });
-    req.io.sockets.emit(`statusPayment-${order.user._id}`, { order });
+    if (oldOrder.status_payment !== order.status_payment) {
+      req.io.sockets.emit(`statusPayment-${order.user._id}`, {
+        data: order.status_payment,
+        orderNo: order.order_number,
+      });
+    } else {
+      req.io.sockets.emit(`progressOrder-${order._id}`, { order: order });
+      req.io.sockets.emit(`updateOrder-${order.user._id}`, {
+        data: order.status_order,
+        orderNo: order.order_number,
+      });
+    }
+
+    req.io.sockets.emit('updateOrder', 'updateOrder');
 
     return res.json(order);
   } catch (err) {
