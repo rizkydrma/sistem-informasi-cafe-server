@@ -275,6 +275,10 @@ async function update(req, res, next) {
         data: order.status_order,
         orderNo: order.order_number,
       });
+      req.io.sockets.emit(`notifNewOrder`, {
+        type: order.status_order,
+        user: order.user.full_name,
+      });
     }
 
     req.io.sockets.emit('updateOrder', 'updateOrder');
