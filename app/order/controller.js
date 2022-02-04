@@ -128,8 +128,6 @@ async function store(req, res, next) {
       .populate('user')
       .sort({ createdAt: -1 });
 
-    console.log(lastAddOrder[0]);
-
     req.io.sockets.emit('thisNewOrder', {
       data: lastAddOrder[0],
     });

@@ -1,5 +1,6 @@
 const Product = require('./model');
 const Category = require('../category/model');
+const LikedItem = require('../liked-item/model');
 const Tag = require('../tag/model');
 const path = require('path');
 const fs = require('fs');
@@ -36,6 +37,24 @@ async function index(req, res, next) {
       .skip(parseInt(skip))
       .populate('category')
       .select('-__v');
+
+    let likedItem = await LikedItem.aggregate([
+      {
+        $group: {
+          _id: '$name',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    products.forEach((product, idx) => {
+      likedItem.forEach((liked) => {
+        if (product.name === liked._id) {
+          products[idx].liked = liked.count;
+        }
+      });
+    });
+
     return res.json({ data: products, count });
   } catch (err) {
     next(err);
@@ -49,6 +68,21 @@ async function show(req, res, next) {
     let product = await Product.findOne({ _id: product_id }).populate(
       'category',
     );
+    let likedItem = await LikedItem.aggregate([
+      {
+        $group: {
+          _id: '$name',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    likedItem.forEach((liked) => {
+      if (liked._id === product.name) {
+        product.liked = liked.count;
+      }
+    });
+
     return res.json(product);
   } catch (err) {
     return res.json({

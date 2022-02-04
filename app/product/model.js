@@ -19,9 +19,9 @@ const productSchema = Schema(
       default: 0,
     },
 
-    rating: {
+    liked: {
       type: Number,
-      default: 4.5,
+      default: 0,
     },
 
     variant: {
