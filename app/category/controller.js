@@ -40,6 +40,8 @@ async function store(req, res, next) {
     let category = new Category(payload);
 
     await category.save();
+
+    req.io.sockets.emit(`category`, 'update category');
     return res.json(category);
   } catch (err) {
     if (err && err.name === 'ValidationError') {
@@ -71,7 +73,7 @@ async function update(req, res, next) {
       payload,
       { new: true, runValidators: true },
     );
-
+    req.io.sockets.emit(`category`, 'update category');
     return res.json(category);
   } catch (err) {
     if (err && err.name === 'ValidationError') {
@@ -98,6 +100,7 @@ async function destroy(req, res, next) {
     }
 
     let deleted = await Category.findOneAndDelete({ _id: req.params.id });
+    req.io.sockets.emit(`category`, 'update category');
     return res.json(deleted);
   } catch (err) {
     next(err);
